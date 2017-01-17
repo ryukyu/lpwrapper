@@ -4,7 +4,7 @@ Lpwrapper is a cli tool that wraps the lpass cli tool for quick password searche
 
 # INSTALL #
 
-apt-get install lastpass-cli
+apt-get -y install lastpass-cli xsel
 
 git clone git@github.com:ryukyu/lpwrapper.git
 
@@ -16,4 +16,4 @@ Optionally bind lpwrapper with a terminal profile to get "quick search" function
 terminator -x $PATH/lpwrapper/lpwrapper
 
 # NOTES #
-Requires the lastpass-cli which does all the heavy lifting. This is just a simple python script to make searches easier.
+Requires the lastpass-cli which does all the heavy lifting. This is just a simple python script to make searches easier. Also requires xsel to copy password to the clipboard.
