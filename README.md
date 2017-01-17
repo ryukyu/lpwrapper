@@ -1,6 +1,6 @@
 # lpwrapper #
 
-Lpwrapper is a cli tool that wraps the lpass cli tool for quick password searches.
+lpwrapper is a cli tool that wraps the lpass cli tool for quick password searches.
 
 # INSTALL #
 
