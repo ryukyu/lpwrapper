@@ -8,4 +8,4 @@ Lpwrapper is a cli tool that wraps the lpass cli tool for quick password searche
 
 Optionally bind lpwrapper with a terminal profile to get "quick search" functionality.
 
-terminator -p lpwrapper
+terminator -x <exec_path>/lpwrapper
