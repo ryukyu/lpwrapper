@@ -8,29 +8,64 @@ Wrapper for lpass-cli that makes it easier to search for passwords.
 import re
 import sys
 import shlex
+import signal
+import time
 
 from subprocess import PIPE, Popen, STDOUT
 
+TIMEOUT = 30
 PROMPT = u"Search for Password: "
 NOT_FOUND = u"Sorry we couldn't find any entries that match: {}"
 SELECT = u"Select the password you want: "
 INVALID_CHOICE = u"Invalid choice"
 ERR_CLIP = u"Error copying password to clipboard."
+WAITING = u"Waiting {} for password to be used.".format(TIMEOUT)
+USE_XSEL = False
 
 
 class LPWrapper(object):
 
     def __init__(self):
+        self.run()
+        while True:
+            more = self.wait()
+            if more:
+                self.run()
+
+    def run(self):
         self.clear()
+        self.start_timer()
         results = self.search()
         choices = self.render(results)
         selected = self.chooser(choices)
-        password = self.password(selected)
-        self.clipboard(password)
+        self.password(selected)
+        self.stop_timer()
+
+    def wait(self):
+        self.start_timer()
+        print(WAITING)
+        more = raw_input("Do you need more passwords? (y/n)")
+        if more == 'y':
+            self.stop_timer()
+            return True
+        time.sleep(TIMEOUT + 1)
+        self.stop_timer()
+        sys.exit()
 
     def clear(self):
         # send ESC c to clear the screen
         print("\033c")
+
+    def timeout(self, signum, frame):
+        print("\nGoodbye...\n")
+        sys.exit()
+
+    def start_timer(self, timeout=TIMEOUT):
+        signal.signal(signal.SIGALRM, self.timeout)
+        signal.alarm(timeout)
+
+    def stop_timer(self):
+        signal.alarm(0)
 
     def search(self):
         p_input = raw_input(PROMPT)
@@ -70,11 +105,20 @@ class LPWrapper(object):
             return self.chooser(choices)
 
     def password(self, password):
-        cmd = 'lpass show --password {}'.format(password)
+        cmd = "lpass show --password {}".format(password)
+        if not USE_XSEL:
+            cmd += " -c"
         p = Popen(shlex.split(cmd), stdout=PIPE)
-        return p.stdout.read()
+        if USE_XSEL:
+            out, err = p.communicate()
+            return self.clipboard(out)
+        p.stdout.close()
+        return True
 
     def clipboard(self, data):
+        # this is optional but lpass clears the primary buffer on exit so
+        # the password isn't no longer available on the clipboard.
+        # Could be what you want though.
         p = Popen(shlex.split('xsel --clipboard'), stdin=PIPE)
         out, err = p.communicate(input=data)
         if err:
@@ -82,9 +126,13 @@ class LPWrapper(object):
         return True
 
 
-if __name__ == '__main__':
+def main():
     try:
         LPWrapper()
     except KeyboardInterrupt:
         print('')
         sys.exit()
+
+
+if __name__ == '__main__':
+    main()
